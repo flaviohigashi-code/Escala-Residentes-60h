@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala de Residentes</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #0284c7;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #cbd5e1;
+    --text: #1e293b;
+    --sat-bg: #fef3c7;
+    --feriado-bg: #fef08a; /* Amarelo para Feriados */
+    --col-sat-bg: #dcfce7; /* Verde Claro para a Coluna do Residente do Sábado */
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .no-print {
+    background-color: var(--card-bg);
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+
+  h1 {
+    color: var(--primary);
+    margin-top: 0;
+    font-size: 22px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 8px;
+  }
+
+  .form-grid-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .residents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+    background-color: #f1f5f9;
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .resident-card {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .resident-card h3 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: var(--primary);
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #475569;
+  }
+
+  input[type="text"], input[type="date"], input[type="number"], select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, select:focus {
+    border-color: var(--primary-light);
+  }
+
+  .btn-container {
+    display: flex;
+    gap: 12px;
+  }
+
+  button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  button:hover {
+    background-color: #1e40af;
+  }
+
+  button.btn-print {
+    background-color: #059669;
+  }
+
+  button.btn-print:hover {
+    background-color: #047857;
+  }
+
+  /* Estilos da Escala Gerada */
+  #escala-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .escala-header {
+    background-color: var(--primary);
+    color: white;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+  }
+
+  .escala-header h2 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+  }
+
+  .escala-header p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
+  .week-block {
+    margin-bottom: 24px;
+    page-break-inside: avoid;
+  }
+
+  .week-title {
+    background-color: var(--primary-light);
+    color: white;
+    padding: 8px 12px;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  th {
+    background-color: #e2e8f0;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  /* Campos editáveis na tabela */
+  .editable-cell {
+    width: 95%;
+    border: 1px solid transparent;
+    background: transparent;
+    text-align: center;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  .editable-cell:hover {
+    border-color: #cbd5e1;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .editable-cell:focus {
+    border-color: var(--primary-light);
+    background-color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+  }
+
+  th .editable-cell {
+    font-weight: bold;
+    color: inherit;
+  }
+
+  /* Destaque da Coluna do Residente do Sábado */
+  th.col-sabado {
+    background-color: #15803d !important;
+    color: white !important;
+  }
+
+  td.col-sabado {
+    background-color: var(--col-sat-bg);
+  }
+
+  /* Destaque de Feriado (Amarelo) */
+  tr.feriado-row td {
+    background-color: var(--feriado-bg) !important;
+  }
+
+  .feriado-badge {
+    background-color: #ca8a04;
+    color: white;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  tr.sat-row {
+    background-color: #fff7ed;
+  }
+
+  .legenda {
+    background-color: #f1f5f9;
+    border-left: 4px solid var(--primary-light);
+    padding: 12px;
+    font-size: 12px;
+    margin-top: 20px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* Configurações específicas para Impressão e PDF */
+  @page {
+    size: A4 portrait;
+    margin: 10mm; /* Remove cabeçalhos e rodapés padrão do navegador (como data, hora, URL) */
+  }
+
+  @media print {
+    body {
+      background-color: white;
+      padding: 0;
+      margin: 0;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    #escala-container {
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .week-block {
+      page-break-inside: avoid;
+    }
+
+    .editable-cell {
+      border: none !important;
+      background: transparent !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Painel de Configuração (Oculto na Impressão) -->
+  <div class="no-print">
+    <h1>⚙️ Configuração da Escala de Residentes</h1>
+    
+    <div class="form-grid-top">
+      <div class="form-group">
+        <label for="startDate">Data Inicial (Segunda-feira):</label>
+        <input type="date" id="startDate" value="2026-07-27">
+      </div>
+      <div class="form-group">
+        <label for="numWeeks">Quantidade de Semanas:</label>
+        <input type="number" id="numWeeks" value="4" min="1" max="52">
+      </div>
+    </div>
+
+    <label style="font-weight: bold; margin-bottom: 8px; display: block;">Configuração dos Residentes e Sequência de Sábados:</label>
+    <div class="residents-grid">
+      
+      <div class="resident-card">
+        <h3>Residente 1</h3>
+        <div class="form-group">
+          <label for="r1Name">Nome:</label>
+          <input type="text" id="r1Name" value="Luis">
+        </div>
+        <div class="form-group">
+          <label for="r1Sat">Plantão de Sábado:</label>
+          <select id="r1Sat">
+            <option value="0" selected>Sábado 1 (1ª semana)</option>
+            <option value="1">Sábado 2 (2ª semana)</option>
+            <option value="2">Sábado 3 (3ª semana)</option>
+            <option value="3">Sábado 4 (4ª semana)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resident-card">
+        <h3>Residente 2</h3>
+        <div class="form-group">
+          <label for="r2Name">Nome:</label>
+          <input type="text" id="r2Name" value="Fernanda">
+        </div>
+        <div class="form-group">
+          <label for="r2Sat">Plantão de Sábado:</label>
+          <select id="r2Sat">
+            <option value="0">Sábado 1 (1ª semana)</option>
+            <option value="1" selected>Sábado 2 (2ª semana)</option>
+            <option value="2">Sábado 3 (3ª semana)</option>
+            <option value="3">Sábado 4 (4ª semana)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resident-card">
+        <h3>Residente 3</h3>
+        <div class="form-group">
+          <label for="r3Name">Nome:</label>
+          <input type="text" id="r3Name" value="Giulia">
+        </div>
+        <div class="form-group">
+          <label for="r3Sat">Plantão de Sábado:</label>
+          <select id="r3Sat">
+            <option value="0">Sábado 1 (1ª semana)</option>
+            <option value="1">Sábado 2 (2ª semana)</option>
+            <option value="2" selected>Sábado 3 (3ª semana)</option>
+            <option value="3">Sábado 4 (4ª semana)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resident-card">
+        <h3>Residente 4</h3>
+        <div class="form-group">
+          <label for="r4Name">Nome:</label>
+          <input type="text" id="r4Name" value="Fernando">
+        </div>
+        <div class="form-group">
+          <label for="r4Sat">Plantão de Sábado:</label>
+          <select id="r4Sat">
+            <option value="0">Sábado 1 (1ª semana)</option>
+            <option value="1">Sábado 2 (2ª semana)</option>
+            <option value="2">Sábado 3 (3ª semana)</option>
+            <option value="3" selected>Sábado 4 (4ª semana)</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="btn-container">
+      <button onclick="gerarEscala()">🔄 Gerar Escala</button>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    </div>
+  </div>
+
+  <!-- Container onde a escala será renderizada -->
+  <div id="escala-container"></div>
+
+</div>
+
+<script>
+// Lista de feriados nacionais fixos e móveis
+const FERIADOS = {
+  "01-01": "Ano Novo",
+  "02-17": "Carnaval",
+  "04-03": "Sexta-feira Santa",
+  "04-21": "Tiradentes",
+  "05-01": "Dia do Trabalho",
+  "06-04": "Corpus Christi",
+  "09-07": "Independência do Brasil",
+  "10-12": "Nossa Sra. Aparecida",
+  "11-02": "Finados",
+  "11-15": "Proclamação da República",
+  "11-20": "Consciência Negra",
+  "12-25": "Natal"
+};
+
+function formatDate(date) {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+function getDayName(dayIdx) {
+  const days = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
+  return days[dayIdx];
+}
+
+function gerarEscala() {
+  const startDateInput = document.getElementById('startDate').value;
+  const numWeeksInput = parseInt(document.getElementById('numWeeks').value, 10);
+
+  if (!startDateInput) {
+    alert("Por favor, selecione uma data inicial.");
+    return;
+  }
+
+  if (isNaN(numWeeksInput) || numWeeksInput < 1) {
+    alert("Por favor, informe uma quantidade válida de semanas (no mínimo 1).");
+    return;
+  }
+
+  const rNames = [
+    document.getElementById('r1Name').value || "Luis",
+    document.getElementById('r2Name').value || "Fernanda",
+    document.getElementById('r3Name').value || "Giulia",
+    document.getElementById('r4Name').value || "Fernando"
+  ];
+
+  const rSatChoices = [
+    parseInt(document.getElementById('r1Sat').value, 10),
+    parseInt(document.getElementById('r2Sat').value, 10),
+    parseInt(document.getElementById('r3Sat').value, 10),
+    parseInt(document.getElementById('r4Sat').value, 10)
+  ];
+
+  const startDate = new Date(startDateInput + 'T00:00:00');
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + (numWeeksInput * 7) - 1);
+
+  let html = `
+    <div class="escala-header">
+      <h2>Escala de Residentes (Editável)</h2>
+      <p>Período: <strong>${formatDate(startDate)}</strong> até <strong>${formatDate(endDate)}</strong> (${numWeeksInput} semana${numWeeksInput > 1 ? 's' : ''})</p>
+    </div>
+  `;
+
+  for (let weekIdx = 0; weekIdx < numWeeksInput; weekIdx++) {
+    const weekStart = new Date(startDate);
+    weekStart.setDate(weekStart.getDate() + (weekIdx * 7));
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const currentSatCycle = weekIdx % 4;
+    
+    let satResidentIdx = rSatChoices.indexOf(currentSatCycle);
+    if (satResidentIdx === -1) {
+      satResidentIdx = currentSatCycle;
+    }
+
+    html += `
+      <div class="week-block">
+        <div class="week-title">
+          Semana ${weekIdx + 1}: ${formatDate(weekStart)} a ${formatDate(weekEnd)} (Plantão de Sábado: ${rNames[satResidentIdx]})
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 13%;">Data</th>
+              <th style="width: 17%;">Dia</th>
+    `;
+
+    for (let rIdx = 0; rIdx < 4; rIdx++) {
+      const isSatCol = (rIdx === satResidentIdx);
+      html += `
+        <th style="width: 17.5%;" class="${isSatCol ? 'col-sabado' : ''}">
+          <input type="text" class="editable-cell" value="${rNames[rIdx]}${isSatCol ? ' (Sábado)' : ''}" />
+        </th>
+      `;
+    }
+
+    html += `
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const currentDay = new Date(weekStart);
+      currentDay.setDate(currentDay.getDate() + dayOffset);
+
+      const monthDayStr = String(currentDay.getMonth() + 1).padStart(2, '0') + '-' + String(currentDay.getDate()).padStart(2, '0');
+      const isFeriado = FERIADOS[monthDayStr] !== undefined;
+      const feriadoNome = FERIADOS[monthDayStr] || "";
+      const isSaturday = dayOffset === 5;
+
+      let rowClass = "";
+      if (isFeriado) rowClass = "feriado-row";
+      else if (isSaturday) rowClass = "sat-row";
+
+      html += `<tr class="${rowClass}">
+        <td><strong>${formatDate(currentDay)}</strong></td>
+        <td>${getDayName(dayOffset)}${isFeriado ? `<br/><span class="feriado-badge">${feriadoNome}</span>` : ''}</td>
+      `;
+
+      for (let rIdx = 0; rIdx < 4; rIdx++) {
+        let shiftText = "";
+        const isSatCol = (rIdx === satResidentIdx);
+
+        if (dayOffset === 0 || dayOffset === 2 || dayOffset === 4) {
+          shiftText = "07:00 - 17:00 (10h)";
+        } else if (dayOffset === 1 || dayOffset === 3) {
+          shiftText = "07:00 - 19:00 (12h)";
+        } else if (dayOffset === 5) {
+          if (isSatCol) {
+            shiftText = "07:00 - 13:00 (6h)";
+          } else {
+            shiftText = "FOLGA";
+          }
+        } else {
+          shiftText = "FOLGA";
+        }
+
+        html += `
+          <td class="${isSatCol ? 'col-sabado' : ''}">
+            <input type="text" class="editable-cell" value="${shiftText}" />
+          </td>
+        `;
+      }
+
+      html += `</tr>`;
+    }
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="legenda">
+      <strong>Horários e Carga Horária:</strong><br>
+      • <strong>Segunda, Quarta e Sexta:</strong> 07:00 às 17:00 (10h/dia = 30h)<br>
+      • <strong>Terça e Quinta:</strong> 07:00 às 19:00 (12h/dia = 24h)<br>
+      • <strong>Sábado:</strong> 07:00 às 13:00 (6h - exclusivo para o residente do plantão)<br>
+      • <strong>Soma total com plantão no sábado:</strong> 30h + 24h + 6h = <strong>60 horas exatas na semana!</strong><br>
+      • <span style="background-color: #dcfce7; padding: 2px 6px; border-radius: 3px; font-weight: bold; border: 1px solid #86efac;">Verde Claro</span>: Coluna do residente designado para o plantão do Sábado naquela semana.<br>
+      • <span style="background-color: #fef08a; padding: 2px 6px; border-radius: 3px; font-weight: bold; border: 1px solid #fde047;">Amarelo</span>: Feriados Nacionais em destaque.
+    </div>
+  `;
+
+  document.getElementById('escala-container').innerHTML = html;
+}
+
+// Gerar automaticamente na primeira carga
+window.onload = gerarEscala;
+</script>
+
+</body>
+</html>
