@@ -267,7 +267,7 @@
   /* Configurações específicas para Impressão e PDF */
   @page {
     size: A4 portrait;
-    margin: 10mm; /* Remove cabeçalhos e rodapés padrão do navegador (como data, hora, URL) */
+    margin: 10mm; /* Sem data/hora nos cabeçalhos/rodapés */
   }
 
   @media print {
@@ -531,18 +531,24 @@ function gerarEscala() {
         let shiftText = "";
         const isSatCol = (rIdx === satResidentIdx);
 
-        if (dayOffset === 0 || dayOffset === 2 || dayOffset === 4) {
-          shiftText = "07:00 - 17:00 (10h)";
-        } else if (dayOffset === 1 || dayOffset === 3) {
-          shiftText = "07:00 - 19:00 (12h)";
-        } else if (dayOffset === 5) {
-          if (isSatCol) {
+        if (isSatCol) {
+          // Residente que faz o SÁBADO
+          if (dayOffset === 0 || dayOffset === 2 || dayOffset === 4) { // Seg, Qua, Sex
+            shiftText = "07:00 - 17:00 (10h)";
+          } else if (dayOffset === 1 || dayOffset === 3) { // Ter, Qui
+            shiftText = "07:00 - 19:00 (12h)";
+          } else if (dayOffset === 5) { // Sábado
             shiftText = "07:00 - 13:00 (6h)";
-          } else {
+          } else { // Domingo
             shiftText = "FOLGA";
           }
         } else {
-          shiftText = "FOLGA";
+          // Residentes que NÃO fazem o sábado (fazem Segunda a Sexta todo dia das 07:00 às 19:00)
+          if (dayOffset >= 0 && dayOffset <= 4) { // Segunda a Sexta
+            shiftText = "07:00 - 19:00 (12h)";
+          } else { // Sábado e Domingo
+            shiftText = "FOLGA";
+          }
         }
 
         html += `
@@ -564,12 +570,10 @@ function gerarEscala() {
 
   html += `
     <div class="legenda">
-      <strong>Horários e Carga Horária:</strong><br>
-      • <strong>Segunda, Quarta e Sexta:</strong> 07:00 às 17:00 (10h/dia = 30h)<br>
-      • <strong>Terça e Quinta:</strong> 07:00 às 19:00 (12h/dia = 24h)<br>
-      • <strong>Sábado:</strong> 07:00 às 13:00 (6h - exclusivo para o residente do plantão)<br>
-      • <strong>Soma total com plantão no sábado:</strong> 30h + 24h + 6h = <strong>60 horas exatas na semana!</strong><br>
-      • <span style="background-color: #dcfce7; padding: 2px 6px; border-radius: 3px; font-weight: bold; border: 1px solid #86efac;">Verde Claro</span>: Coluna do residente designado para o plantão do Sábado naquela semana.<br>
+      <strong>Regra de Carga Horária (60 horas semanais por residente):</strong><br>
+      • <strong>Residentes de Folga no Sábado (Outros 3 residentes):</strong> Trabalham de <strong>Segunda a Sexta, das 07:00 às 19:00</strong> (5 dias × 12h = <strong>60 horas exatas</strong>). Sábado e Domingo: FOLGA.<br>
+      • <strong>Residente do Plantão de Sábado:</strong> Trabalha <strong>Terça e Quinta (07:00 - 19:00 = 24h)</strong>, <strong>Segunda, Quarta e Sexta (07:00 - 17:00 = 30h)</strong> e <strong>Sábado (07:00 - 13:00 = 6h)</strong> (30h + 24h + 6h = <strong>60 horas exatas</strong>).<br>
+      • <span style="background-color: #dcfce7; padding: 2px 6px; border-radius: 3px; font-weight: bold; border: 1px solid #86efac;">Verde Claro</span>: Coluna do residente do plantão de Sábado daquela semana.<br>
       • <span style="background-color: #fef08a; padding: 2px 6px; border-radius: 3px; font-weight: bold; border: 1px solid #fde047;">Amarelo</span>: Feriados Nacionais em destaque.
     </div>
   `;
